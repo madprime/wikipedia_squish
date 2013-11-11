@@ -1,8 +1,12 @@
 """Download traffic data files from dumsp.wikimedia.org, check md5sums."""
 
+import functools
+import gzip
 import hashlib
+import locale
 import os
 import re
+import subprocess
 import sys
 import urllib
 
@@ -74,22 +78,59 @@ def get_month_counts(year, month, local_dir):
         except IOError:
             return False
 
+    # Get daily pagecount prefixes
+    daily_pagecount_prefixes = sorted(set([re.match('(pagecounts-[0-9]{8})-',
+                                                    x).groups()[0] for
+                                           x in hashes if
+                                           re.match('pagecounts-[0-9]{8}-',x)]))
     # Get and/or check count files
-    for filename in sorted(hashes):
-        counts_filepath = os.path.join(local_dir, filename)
-        counts_url = url + filename
-        if not os.path.exists(counts_filepath):
-            print "Downloading: " + counts_url
-            urllib.urlretrieve(counts_url, counts_filepath)
-        if not checkhash(counts_filepath, hashes[filename]):
-            counts_url = url + filename
-            print "Incomplete or corrupted file, trying again: " + counts_url
-            urllib.urlretrieve(counts_url, counts_filepath)
-            if not checkhash(counts_filepath, hashes[filename]):
-                print "Hash still doesn't match. Giving up on: " + counts_url
+    for daily_pagecount_prefix in daily_pagecount_prefixes:
+        print "Working with " + daily_pagecount_prefix
+        daily_filenames = [x for x in sorted(hashes) if
+                           re.match(daily_pagecount_prefix, x)]
+        counts_filepaths = [os.path.join(local_dir, fn) for
+                            fn in daily_filenames]
+        sorted_filepaths = [re.sub('.gz', '_sorted.gz', fp) for
+                            fp in counts_filepaths]
+        for i in range(len(daily_filenames)):
+            counts_filepath = counts_filepaths[i]
+            sorted_filepath = sorted_filepaths[i]
+            sort_command = ('zcat ' + counts_filepath + ' | ' +
+                            'LC_ALL=C sort --key=1,1 --key=2,2  | gzip -c > ' +
+                            sorted_filepath)
+            if os.path.exists(sorted_filepath) and not os.path.exists(counts_filepath):
+                print "Download and sort complete for " + sorted_filepath
+                continue
+            elif (os.path.exists(counts_filepath) and
+                  checkhash(counts_filepath, hashes[daily_filenames[i]])):
+                print "Sorting " + counts_filepath
+                sortfiles = subprocess.call(sort_command, shell=True)
+                # sortfiles should be 0 to represent success
+                if sortfiles == 0:
+                    print "Sorting complete for " + sorted_filepath
+                    os.remove(counts_filepath)
+                else:
+                    print "Sorting ailure for " + counts_filepath
+                    os.remove(sorted_filepath)
+            else:
+                print "Download " + counts_filepath
+                counts_url = url + daily_filenames[i]
+                print "Downloading: " + counts_url
+                urllib.urlretrieve(counts_url, counts_filepath)
+                print "Download complete for " + counts_filepath
+                if checkhash(counts_filepath, hashes[daily_filenames[i]]):
+                    print "Sorting " + counts_filepath
+                    sortfiles = subprocess.call(sort_command, shell=True)
+                    if sortfiles == 0:
+                        print "Sorting complete for " + sorted_filepath
+                        os.remove(counts_filepath)
+                    else:
+                        print "Sorting failure for " + counts_filepath
+                        os.remove(sorted_filepath)
+
 
 if __name__ == "__main__":
-    target_directory = sys.argv[1]
+    target_directory = os.path.abspath(sys.argv[1])
     assert os.path.exists(target_directory)
     month_counts = []
 
