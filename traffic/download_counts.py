@@ -11,9 +11,9 @@ import sys
 import urllib
 
 START_YEAR = 2013
-START_MONTH = 8
+START_MONTH = 3
 END_YEAR = 2013
-END_MONTH = 10
+END_MONTH = 3
 
 def generate_month_list(start_year, start_month, end_year, end_month):
 
