@@ -52,6 +52,7 @@ def process_page(data):
 
 if __name__ == "__main__":
     output_file = open(sys.argv[2], 'w')
+    print sys.argv[1]
     with bz2.BZ2File(sys.argv[1], 'r') as dump:
         in_page = False
         page_data = ''

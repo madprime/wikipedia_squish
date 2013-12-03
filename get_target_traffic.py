@@ -18,8 +18,8 @@ def process_traffic(dirpath, datestr, language):
     re_target = r'pagecounts-' + datestr + '.*\.gz'
     filepaths = sorted([os.path.join(dirpath, x) for x in
                         os.listdir(dirpath) if re.match(re_target, x)])
-    outputfile = gzip.open(os.path.join(dirpath, 'pagecounts_' + language +
-                                        '_' + datestr + '.gz'), 'w')
+    outputfile = open(os.path.join(dirpath, 'pagecounts_' + language +
+                                        '_' + datestr + '.txt'), 'w')
     for fp in filepaths:
         print "Processing " + fp
         with gzip.open(fp) as f:
