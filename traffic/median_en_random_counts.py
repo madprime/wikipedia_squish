@@ -13,7 +13,7 @@ def median(mylist):
     return sorts[length / 2]
 
 def main(counts_dir):
-    output_file = gzip.open('combined_random.gzip', 'w')
+    output_file = gzip.open('median_random.gzip', 'w')
     countsfiles = [gzip.open(os.path.join(counts_dir, x), 'r')
                    for x in os.listdir(counts_dir)
                    if re.match('pagecounts-', x)]
@@ -29,9 +29,10 @@ def main(counts_dir):
         earliest_page = min(l[1] for l in curr_lines)
         earliest_data = [int(l[2]) if l[1] == earliest_page
                          else 0 for l in curr_lines]
-        output_file.write(' '.join([earliest_page,
-                                    str(median(earliest_data)),
-                                    ]) + '\n')
+        median_count = median(earliest_data)
+        if median_count:
+            output_file.write(earliest_page + ' ' +
+                              str(median_count) + '\n')
         for i in range(len(countsfiles)):
             if active_files[i] and curr_lines[i][1] == earliest_page:
                 line = countsfiles[i].readline()

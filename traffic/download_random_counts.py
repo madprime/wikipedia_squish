@@ -15,6 +15,7 @@ START_YEAR = 2008
 START_MONTH = 1
 END_YEAR = 2013
 END_MONTH = 12
+NUM_PAGES = 9
 
 def generate_month_list(start_year, start_month, end_year, end_month):
 
@@ -132,7 +133,7 @@ if __name__ == "__main__":
 
     # Months are tuples of year and month number as strings, e.g. ('2013', '09')
     month_list = generate_month_list(START_YEAR, START_MONTH, END_YEAR, END_MONTH)
-    for i in range(0, 10):
+    for i in range(0, NUM_PAGES):
         random_month = month_list[random.randint(0, len(month_list) - 1)]
         month_directory = os.path.join(target_directory,
                                        random_month[0] + '-' + random_month[1])

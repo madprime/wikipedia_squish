@@ -1,0 +1,6 @@
+[submodule "mw-ocg-texter"]
+	path = mw-ocg-texter
+	url = git://github.com/cscott/mw-ocg-texter.git
+[submodule "mediawiki-extensions-Collection-OfflineContentGenerator-bundler"]
+	path = mediawiki-extensions-Collection-OfflineContentGenerator-bundler
+	url = https://github.com/wikimedia/mediawiki-extensions-Collection-OfflineContentGenerator-bundler
