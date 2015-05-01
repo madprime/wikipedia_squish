@@ -51,24 +51,25 @@ def process_page(data):
         return None
 
 if __name__ == "__main__":
-    output_file = open(sys.argv[2], 'w')
-    print sys.argv[1]
-    with bz2.BZ2File(sys.argv[1], 'r') as dump:
-        in_page = False
-        page_data = ''
-        for line in dump:
-            if re.match('  <page>', line):
-                page_data = line
-                in_page = True
-            elif re.match('  </page>', line):
-                in_page = False
-                page_data += line
-                title_data = process_page(page_data)
-                if title_data:
-                    try:
-                        output_file.write((title_data + '\n'))
-                    except UnicodeEncodeError:
-                        output_file.write((title_data + '\n').encode('utf-8'))
-                page_data = ''
-            elif in_page:
-                page_data += line
+    output_file = open(sys.argv[1], 'w')
+    # print sys.argv[1]
+    #with bz2.BZ2File(sys.argv[1], 'r') as dump:
+    in_page = False
+    page_data = ''
+    while 1:
+        line = sys.stdin.readline()
+        if re.match('  <page>', line):
+            page_data = line
+            in_page = True
+        elif re.match('  </page>', line):
+            in_page = False
+            page_data += line
+            title_data = process_page(page_data)
+            if title_data:
+                try:
+                    output_file.write((title_data + '\n'))
+                except UnicodeEncodeError:
+                    output_file.write((title_data + '\n').encode('utf-8'))
+            page_data = ''
+        elif in_page:
+            page_data += line

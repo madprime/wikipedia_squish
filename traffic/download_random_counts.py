@@ -1,9 +1,6 @@
 """Download traffic data files from dumsp.wikimedia.org, check md5sums."""
 
-import functools
-import gzip
 import hashlib
-import locale
 import os
 import random
 import re
@@ -13,9 +10,10 @@ import urllib
 
 START_YEAR = 2008
 START_MONTH = 1
-END_YEAR = 2013
+END_YEAR = 2014
 END_MONTH = 12
-NUM_PAGES = 9
+NUM_PAGES = 12
+
 
 def generate_month_list(start_year, start_month, end_year, end_month):
 
@@ -131,8 +129,9 @@ if __name__ == "__main__":
     assert os.path.exists(target_directory)
     month_counts = []
 
-    # Months are tuples of year and month number as strings, e.g. ('2013', '09')
-    month_list = generate_month_list(START_YEAR, START_MONTH, END_YEAR, END_MONTH)
+    # Months are tuples of year and month number as strings, eg. ('2013', '09')
+    month_list = generate_month_list(
+        START_YEAR, START_MONTH, END_YEAR, END_MONTH)
     for i in range(0, NUM_PAGES):
         random_month = month_list[random.randint(0, len(month_list) - 1)]
         month_directory = os.path.join(target_directory,
