@@ -1,0 +1,58 @@
+### Figure out top pages from traffic
+
+Get traffic stats...
+
+ python download_random_counts.py random_pages
+ mkdir random_pages_sorted
+ mv random_pages/*/*_sorted.gz random_pages_sorted/
+
+...did this until there were 120 randomly sampled hour traffic stats from
+between Jan 1 2008 and Dec 31 2014.
+
+Then to combine these traffic stats and get a median for each page...
+
+ combine_en_random_counts.py random_pages_sorted
+
+... which produced the file 'combined_random.gz'
+
+Then sorted this on the median column:
+
+ zcat combined_random.gz | sort --key=2nr,2 --key=1,1 | gzip -c > combined_random_sorted_median.gz
+
+Convert the top pages to a page name per line (decoded):
+
+ python get_top_page_names.py traffic/combined_random_sorted_median.gz top_100000_pages
+
+### Get the page text
+
+I used many rounds of commands like the following...
+
+ head -1000 top_100000_pages | tail -400 > page_titles_601_1000
+ mkdir pages_601_1000
+ python get_page_text.py page_titles_601_1000 pages_601_1000 temp.zip
+
+To get text versions of all pages. Note that these required the git submodules.
+
+### Flatten text
+
+After putting all the current text versions together in a directory, the
+following script "flattens" them, which includes converting them to all
+uppercase and removing spaces and tabs.
+
+ python encoding/flatten_articles.py pages_1_7522 pages_1_7522_flattened_nospace_uppercase
+
+### Figure out the encoding
+
+The following script is full of cruft I'm no longer using, having decided to
+not bother with finding optimal digraphs, trigraphs, etc. Just single chars.
+
+Anyway, it was still usable for generating the Huffman encoding by running:
+
+ python encoding/calc_freq_2.py pages_1_7522_flattened_nospace_uppercase
+
+I took the resulting dictionary and manually converted to a canonical
+Huffman code.
+
+Note: The combined bit cost of the set of least popular punctuation is
+less than 1% of the total bit cost. Eliminating these would not result
+in notable compression improvement: [];/%{&+$_?}\=!*#^<>|@`~

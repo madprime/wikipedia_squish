@@ -1,12 +1,14 @@
 import json
 import Queue
+import os
 import random
 import re
 import sys
 
-MAX_NGRAM = 10
-SAMPLING = 1000000
-DICT_SIZE = 4096
+SAMPLE_PAGES = 5000
+MAX_NGRAM = 1
+SAMPLING = 100000
+DICT_SIZE = 256
 
 
 def conv_to_binary(string):
@@ -70,17 +72,15 @@ class TextToEncode(object):
         self.ngram_lists = []
         self.ngram_counts = {}
 
-        print "Loading strings from file..."
-        with open(sys.argv[1]) as f:
-            for line in f:
-                try:
-                    page_text = json.loads(line.rstrip())[0]
-                    self.full_corpus += page_text
-                    self.text_strs.append(page_text)
-                except:
-                    self.full_corpus += line
-                    # print "Can't load:\n" + line.rstrip() + '\n'
-                    # raise
+        print "Loading %s random pages from %s" % (SAMPLE_PAGES, sys.argv[1])
+        pages_list = os.listdir(sys.argv[1])
+        random.shuffle(pages_list)
+        for page_filename in pages_list[0:SAMPLE_PAGES]:
+            inputpath = os.path.join(sys.argv[1], page_filename)
+            with open(inputpath) as f:
+                page_text = ''.join(f.readlines())
+                self.full_corpus += page_text
+                self.text_strs.append(page_text)
 
         print "Setting up ngram sets..."
         self.curr_sets = dict()
@@ -89,6 +89,7 @@ class TextToEncode(object):
             self.ngram_re_splits[i] = None
         print "Getting 1-gram set..."
         self._get_1gram_set()
+        print self.curr_sets
         print "Initialize ngram set"
         self.ngram_lists = [[] for i in range(len(self.text_strs))]
         for i in range(len(self.text_strs)):
@@ -98,6 +99,8 @@ class TextToEncode(object):
 
         print "Set up frequencies"
         self._count_freq_ngrams()
+        print self.ngram_counts
+        print len(self.ngram_counts.keys())
 
     def add_ngrams(self, ngrams):
         for ngram in ngrams:
@@ -179,26 +182,35 @@ class TextToEncode(object):
                 else:
                     self.ngram_counts[ngram] = 1
 
-    def get_ngrams_above_threshold(self, sampling=SAMPLING, min_count=2, max_ngram=MAX_NGRAM):
+    def get_ngrams_above_threshold(self, sampling=SAMPLING, min_count=4, max_ngram=MAX_NGRAM):
         ngram_counts = dict()
         ngram_range = range(max_ngram, 1, -1)
         total_ngrams = sum([len(ngram_list) for ngram_list in self.ngram_lists])
         print "Performing sampling..."
+        curr_ngram_sampling_total = sum([
+            sum([self.ngram_counts[ngram] for ngram in ngram_list])
+            for ngram_list in self.ngram_lists])
+        print curr_ngram_sampling_total
+        normalized = 1.0 * curr_ngram_sampling_total / sampling
+        print normalized
         for i in range(sampling):
             pos = random.randint(0, len(self.full_corpus) - max_ngram)
             for i in ngram_range:
                 ngram_considered = ''.join(self.full_corpus[pos:pos+i])
                 if len(ngram_considered) <= max_ngram:
                     if ngram_considered in ngram_counts:
-                        ngram_counts[ngram_considered] += 1.0 * sampling / total_ngrams
+                        ngram_counts[ngram_considered] += normalized
                     else:
-                        ngram_counts[ngram_considered] = 1.0 * sampling / total_ngrams
+                        ngram_counts[ngram_considered] = normalized
         ngram_values = dict()
         print "Guessing values..."
         for ngram in [x for x in ngram_counts if ngram_counts[x] >= min_count]:
             sub_ngrams = self._string_to_ngrams(ngram)
+            # print sub_ngrams
+            # print [len(code[x]) for x in sub_ngrams]
             curr_code_len = sum([len(code[x]) for x in sub_ngrams])
-            min_count_diff = total_ngrams
+            # print "curr code len for " + ngram + " is " + str(curr_code_len)
+            min_count_diff = curr_ngram_sampling_total
             nearest_ngram = None
             for curr_ngram in self.ngram_counts:
                 if (abs(self.ngram_counts[curr_ngram] - ngram_counts[ngram]) < min_count_diff):
@@ -206,7 +218,9 @@ class TextToEncode(object):
                     nearest_ngram = curr_ngram
                     if min_count_diff == 0:
                         break
+            # print "Nearest current ngram is " + nearest_ngram
             est_new_code_len = len(code[nearest_ngram])
+            # print "estimated new code len is " + str(est_new_code_len)
             ngram_values[ngram] = (curr_code_len - est_new_code_len) * ngram_counts[ngram]
         return ngram_values
 
