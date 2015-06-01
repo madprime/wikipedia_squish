@@ -86,7 +86,7 @@ if __name__ == "__main__":
     pages_list = get_pages_list(pagelist_filepath, pages_dir)
     print len(pages_list)
     for page_filename in pages_list:
-        new_filename = page_filename.rstrip('.txt') + '.flat.txt'
+        new_filename = page_filename[0:-4] + '.flat.txt'
         inputpath = os.path.join(pages_dir, page_filename)
         outputpath = os.path.join(flatten_dir, new_filename)
         with codecs.open(inputpath, 'r', encoding='utf-8') as inputfile:
