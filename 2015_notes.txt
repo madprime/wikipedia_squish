@@ -39,7 +39,11 @@ After putting all the current text versions together in a directory, the
 following script "flattens" them, which includes converting them to all
 uppercase and removing spaces and tabs.
 
- python encoding/flatten_articles.py pages_1_7522 pages_1_7522_flattened_nospace_uppercase
+This step also checks the content of the pages and skips over pages that have
+duplicate content. These represent pages that were redirects (and we already
+have the main version).
+
+ python encoding/flatten_articles.py top_100000_pages pages_1_7522 pages_1_7522_flattened_nospace_uppercase
 
 ### Figure out the encoding
 
@@ -56,3 +60,16 @@ Huffman code.
 Note: The combined bit cost of the set of least popular punctuation is
 less than 1% of the total bit cost. Eliminating these would not result
 in notable compression improvement: [];/%{&+$_?}\=!*#^<>|@`~
+
+I saved that file in "to_canonical_code.csv"
+
+### Encode text
+
+I ran more text retrieval and flattening to get up to the top 21,522 entries
+in 'top_100000_pages'. Not all of these work out, and some turn out to be
+redundant redirects, so the total number turns out to be 21,346.
+
+Running the following script, which used the huffman code csv and applied it
+to the flattened text:
+
+ python encoding/convert_pages_to_binary.py top_100000_pages pages_1_21522_flattened_nospace_uppercase pages_1_21522_flattened_nospace_uppercase_binary
